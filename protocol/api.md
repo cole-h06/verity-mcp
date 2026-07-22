@@ -4,15 +4,15 @@ The Verity API computes structural credibility over networks consisting of sourc
 
 The specific request and response schemas exposed by Verity deployments are defined in this document. API behavior, including versioning, identifiers, errors, and tool interfaces, are also defined.
 
-The API is transport-independent. The reference implementation is exposed through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), but the schemas defined in this document may be used by any compliant deployment.
+The API is transport-independent. The reference implementation is exposed over the [Model Context Protocol (MCP)](https://modelcontextprotocol.io), but the schemas defined in this document may be used by any compliant deployment.
 
 To see related specifications, visit:
 
-- **`protocol.md`** —The communication contract between clients and Verity deployments. Defines the JSON-RPC protocol and request/response formats.
-- **`architecture.md`** — Describes the high-level system architecture and component interactions.
-- **`canonicalization.md`** - Deterministic normalization rules. Specifies how semantically equivalent assertions produce the same graph representation before inference.
-- **`sdk.md`** - Client integration guides for constructing graphs, linkage token generation, submitting requests from supported languages.
-- **`mcp.md`** — The MCP binding for the Verity Protocol.
+- **[`protocol.md`](protocol.md)** —The communication contract between clients and Verity deployments. Defines the JSON-RPC protocol and request/response formats.
+- **[`architecture.md`](architecture.md)**  — Describes the high-level system architecture and component interactions.
+- **[`canonicalization.md`](canonicalization.md)** - Deterministic normalization rules. Specifies how semantically equivalent assertions produce the same graph representation before inference.
+- **[`sdk.md`](sdk.md)** - Client integration guides for constructing graphs, linkage token generation, submitting requests from supported languages.
+- **[`mcp.md`](mcp.md)** — The MCP binding for the Verity Protocol.
 
 ---
 
