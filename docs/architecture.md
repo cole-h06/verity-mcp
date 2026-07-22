@@ -4,10 +4,10 @@ This document provides a high-level overview of the Verity architecture and defi
 
 To see related specifications, visit:
 
-- **[`protocol.md`](protocol.md)** — the communication contract between clients and Verity deployments. Defines the JSON-RPC protocol and request & response formats.
-- **[`canonicalization.md`](canonicalization.md)** — deterministic normalization rules. Specifies how semantically equivalent assertions produce the same graph representation before inference.
-- **[`sdk.md`](sdk.md)** — client integration guides for constructing graphs, linkage token generation, submitting requests from supported languages.
-- **[`mcp.md`](mcp.md)** — the MCP binding for the Verity Protocol.
+- **[`protocol.md`](../protocol/protocol.md)** — the communication contract between clients and Verity deployments. Defines the JSON-RPC protocol and request & response formats.
+- **[`canonicalization.md`](../protocol/canonicalization.md)** — deterministic normalization rules. Specifies how semantically equivalent assertions produce the same graph representation before inference.
+- **[`sdk.md`](../protocol/sdk.md)** — client integration guides for constructing graphs, linkage token generation, submitting requests from supported languages.
+- **[`mcp.md`](../protocol/mcp.md)** — the MCP binding for the Verity Protocol.
 
 ## 1. Objectives
 
