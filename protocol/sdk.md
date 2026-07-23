@@ -1,227 +1,247 @@
 # Verity SDK
 
-## 1. Introduction
+Build applications that communicate with Verity deployments using the official Verity SDKs.
 
-The Verity SDK provides a standardized interface for constructing credibility graphs and communicating with Verity deployments.
+This guide covers installation, configuration, architecture, and how to integrate the Verity SDK into your application. The SDK handles canonicalization, linkage token generation, protocol communication, and interpretation of deterministic credibility telemetry so you can focus on building your application.
 
-The SDK enables client applications to declaratively map structured data into canonical sources, claims, and assertions according to the Verity Protocol prior to generating privacy-preserving linkage tokens and submitting graph updates for credibility inference.
+---
 
-This document defines the responsibilities required to be compliant with Verity SDK implementations.
+# Installation
 
-### Scope
+Choose the SDK that matches your application.
 
-This specification describes the behavior of the Verity SDK. The canonicalization rules referenced throughout this document are defined separately in the Verity Canonicalization Specification.
+## Python
 
-## 2. Design Goals
+```bash
+pip install verity
+```
 
-The Verity SDK is designed according to the following principles.
+## JavaScript / TypeScript
 
-### Minimal Integration
+```bash
+npm install @verity/sdk
+```
 
-The SDK integrates with existing data pipelines without requiring application-specific modifications to the Verity Protocol.
+---
 
-### Domain Agnostic
+# Configuration
 
-The SDK operates on structured assertions regardless of application domain.
+The Verity SDK communicates with deployments implementing the Verity Protocol.
 
-### Deterministic
+## Self-Hosted Deployment
 
-Equivalent structured inputs produce equivalent canonical representations across compliant SDK implementations.
+```python
+client = VerityClient(
+    endpoint="https://verity.example.com"
+)
+```
 
-### Language Independent
+---
 
-The SDK specification may be implemented in any programming language while preserving protocol compatibility.
+# Quick Start
 
-## 3. Scope
+Create a client and construct a credibility graph using your application data. Once completed, you can submit it for inference.
 
-The Verity SDK operates exclusively on structured assertions.
+Python
 
-Responsibilities of the SDK include:
+```python
+from verity import VerityClient
 
-- Mapping structured data declaratively.
-- Canonicalization according to the Verity Canonicalization Specification.
-- Construction of the credibility graph.
-- Generation of privacy-preserving linkage tokens.
-- Communication with Verity deployments.
+client = VerityClient(
+    endpoint="https://verity.example.com"
+)
 
-Responsibilities that fall outside the scope of the SDK include:
+graph = ...
 
-- Semantic extraction from unstructured data.
-- Entity resolution.
-- Information retrieval.
-- LLM prompting.
-- Agent orchestration.
-- Data storage.
+result = client.infer_credibility(graph)
+```
 
-## 4. Responsibilities
+JavaScript
 
-The Verity SDK is responsible for converting structured assertions into graph updates in accordance with the Verity Protocol.
+```javascript
+import { VerityClient } from "@verity/sdk";
 
-### 4.1 Declarative Mapping
+const client = new VerityClient({
+    endpoint: "https://verity.example.com"
+});
 
-The SDK provides a declarative mapping interface for mapping existing structured data into canonical sources, claims, and assertions.
+const result =
+    await client.inferCredibility(graph);
+```
 
-Compliant SDK implementations MUST preserve the mappings defined by the client application and MUST NOT require changes to existing application-specific data models.
+---
 
-### 4.2 Canonicalization
+## Why the SDK?
 
-The SDK MUST canonicalize mapped sources, claims, and assertions in accordance with the Verity Canonicalization Specification.
+If your application already runs inside an MCP-compatible environment, you can communicate directly with a Verity MCP server using your existing MCP client.
 
-The SDK MUST reject any data which cannot be deterministically canonicalized.
+The Verity SDK is intended for applications that communicate directly with Verity deployments. It automates canonicalization, linkage token generation, protocol communication, and response rendering.
 
-### 4.3 Graph Construction
+---
 
-The SDK MUST construct graph updates based on the canonical sources, claims, and assertions.
+# What the SDK Does
 
-The SDK MUST preserve the graph topology represented by the mapped assertions.
+The SDK automatically:
 
-### 4.4 Linkage Generation
+- Canonicalizes your application data.
+- Generates deterministic linkage identifiers.
+- Maintains a local metadata registry.
+- Constructs Verity Protocol requests.
+- Communicates with Verity deployments.
+- Resolves linkage identifiers returned by the deployment.
+- Optionally renders deterministic credibility explanations.
 
-The SDK MUST generate privacy-preserving linkage tokens from canonical graph objects prior to transmission.
+---
 
-The SDK MUST ensure equivalent canonical representations produce equivalent linkage tokens.
+# Architecture
 
-### 4.5 Deployment Communication
+The Verity SDK performs all content-sensitive operations locally before communicating with a Verity deployment.
 
-The SDK MUST submit graph updates to compliant Verity deployments.
+Your application never sends its original sources, entities, attributes, or values to the deployment. Instead, the SDK canonicalizes your data, generates deterministic linkage identifiers, maintains a local metadata registry, and exchanges only opaque identifiers with the deployment.
 
-The SDK MUST deserialize credibility responses into structured results for the client application.
+The deployment returns deterministic credibility telemetry, which the SDK can optionally combine with your original application data to produce explanations.
 
-## 5. Integration Workflow
+---
 
-The Verity SDK is designed to be integrated into existing pipelines that extract structured data, but does not require any changes to the upstream extraction process or downstream application logic.
+# Canonicalization
 
-The SDK performs the following sequence of operations:
+Provide ordinary application data to the SDK.
 
-### 5.1 Existing Pipeline
+```python
+{
+    "source": "docs.anthropic.com",
+    "entity": "messages_api",
+    "attribute": "supports_streaming",
+    "value": True
+}
+```
 
-The client application extracts structured assertions using its existing data processing pipeline.
+The SDK automatically canonicalizes your data according to the Verity Canonicalization Specification before generating linkage identifiers.
 
-### 5.2 Declarative Mapping
+---
 
-Structured data is declaratively mapped to sources, claims, and assertions.
+# Linkage Token Generation
 
-### 5.3 Canonicalization
+After canonicalization, the SDK generates deterministic linkage identifiers.
 
-Mapped graph objects are canonicalized according to the Verity Canonicalization Specification.
+| Canonical Representation | Linkage Identifier |
+|---------------------------|--------------------|
+| Canonical Source | `source_id` |
+| Canonical `(Entity, Attribute)` | `attribute_id` |
+| Canonical `(Entity, Attribute, Value)` | `claim_id` |
 
-### 5.4 Linkage Generation
+Only these linkage identifiers are transmitted to the Verity deployment.
 
-Canonical graph objects are converted into privacy-preserving linkage tokens.
+---
 
-### 5.5 Graph Submission
+# Local Metadata Registry
 
-The SDK submits the resulting graph update to a compliant Verity deployment.
+The SDK maintains a local registry that maps linkage identifiers back to your original application data.
 
-### 5.6 Credibility Response
+For example,
 
-The Verity deployment returns credibility results to the client application.
+```text
+clm_f72d10...
 
-## 6. Supported Inputs
+        │
+        ▼
 
-The Verity SDK accepts structured data that can be deterministically mapped into sources, claims, and assertions.
+messages_api.supports_streaming = true
+```
 
-Supported input formats include:
+The local metadata registry never leaves your application.
 
-### 6.1 JSON Objects
+---
 
-Structured JSON objects and arrays.
+# Making Requests
 
-### 6.2 Structured Language Objects
+Once your graph has been constructed, submit it using the SDK.
 
-Language-native structured objects, such as:
+```python
+result = client.infer_credibility(graph)
+```
 
-- Classes
-- Structs
-- Records
-- Pydantic models
-- Dataclasses
-- TypedDicts
+The SDK handles request construction, serialization, transmission, and response parsing automatically.
 
-### 6.3 Relational Data
+---
 
-Structured rows obtained from relational databases.
+# Understanding Responses
 
-### 6.4 DataFrames
+Verity deployments return deterministic credibility telemetry describing the structure of the credibility graph.
 
-Tabular data stored as DataFrames.
+Example
 
-### 6.5 Structured Serialization Formats
+```json
+{
+  "claim_support": [
+    {
+      "attribute_id": "attr_93e4f7...",
+      "claim_id": "clm_f72d10...",
+      "support": 0.83,
+      "independent_support_count": 3,
+      "dependent_support_count": 0,
+      "is_attribute_max_support": true,
+      "conflicting_claims": [
+        {
+          "claim_id": "clm_51d8ab...",
+          "support": 0.17
+        }
+      ]
+    }
+  ]
+}
+```
 
-Structured serialization formats, such as:
+These signals describe graph topology only. The deployment never has access to your application's original content.
 
-- Protocol Buffers
-- Apache Avro
-- Apache Arrow
+---
 
-The SDK MAY support additional structured formats provided that they are deterministically mappable to canonical sources, claims, and assertions.
+# Rendering Credibility Signals
 
-The SDK MUST reject unstructured inputs that require semantic extraction prior to graph construction.
+Because the SDK maintains the local metadata registry, it can combine returned telemetry with your original application data to explain results.
 
-## 7. Declarative Mapping
+Example
 
-The Verity SDK supports a declarative mapping interface for converting existing structured data into canonical sources, claims, and assertions.
+```text
+Revenue: $94M
 
-Declarative mappings define how fields from structured input are mapped to canonical sources, claims, and assertions without requiring custom application-specific transformation logic.
+Credibility: 0.91
 
-### 7.1 Mapping Schema
+✓ Supported by 4 independent sources.
 
-The mapping schema defines how input fields map to canonical sources, claims, and assertions.
+✓ Highest-supported competing value.
+```
 
-### 7.2 Field Selection
+Or,
 
-Mappings MAY reference nested fields within structured inputs.
+```text
+Vendor API <-> Internal SQL
 
-Verity SDK implementations MUST preserve the mapping defined by the client application.
+Independence: 0.24
 
-### 7.3 Custom Transforms
+! High assertion overlap detected.
+```
 
-Verity SDK implementations MAY support deterministic custom transforms prior to canonicalization.
+These explanations are generated entirely within the SDK. Verity deployments never generate natural-language explanations and never receive the underlying application data.
 
-Custom transformations MUST produce deterministic outputs for equivalent structured inputs.
+---
 
-Semantic extraction is outside the scope of the Verity SDK.
+# Agent Integrations
 
-## 8. Graph Construction
+The SDK can be integrated into existing AI frameworks, such as:
 
-The Verity SDK constructs graph updates from canonical sources, claims, and assertions.
+- LangGraph
+- CrewAI
+- Microsoft Agent Framework
+- Mastra
+- LlamaIndex
 
-### 8.1 Sources
+Applications running inside MCP-compatible environments can integrate directly with the Verity MCP server. 
 
-The SDK constructs source nodes from canonical sources.
+Applications outside the MCP ecosystem can use the Verity SDK to communicate directly with Verity deployments.
 
-Equivalent canonical sources MUST resolve to the same source node.
+---
 
-### 8.2 Claims
+# API Reference
 
-The SDK constructs claim nodes from canonical claims.
-
-Equivalent canonical claims MUST resolve to the same claim node.
-
-### 8.3 Assertions
-
-The SDK constructs directed assertions between source nodes and claim nodes.
-
-Duplicate assertions MUST NOT appear within the same graph update.
-
-## 9. Communication
-
-The Verity SDK communicates with compliant Verity deployments according to the Verity Protocol.
-
-### 9.1 Graph Submission
-
-The SDK submits graph updates to a Verity deployment.
-
-### 9.2 Credibility Response
-
-The SDK deserializes credibility responses into structured objects for the client application.
-
-## 10. Versioning
-
-SDK implementations SHOULD declare the supported Verity Protocol version and Canonicalization Specification version.
-
-SDK implementations MUST reject incompatible protocol versions.
-
-## 11. Conformance
-
-An implementation conforms to the Verity SDK Specification if it satisfies the requirements defined in this document and remains compatible with the Verity Protocol and Verity Canonicalization Specification.
+The following sections describe the SDK interfaces available for each supported programming language.

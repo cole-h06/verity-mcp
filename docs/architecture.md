@@ -15,15 +15,13 @@ The system architecture is designed to compute structural credibility over struc
 
 A major goal for Verity is to enable integration with existing structured data pipelines, regardless of application domain, programming language, or deployment environment used.
 
-Here is a brief summary of the notable design principles:
+The architecture is guided by several core design principles:
 
 - Semantic extraction is separated from credibility inference.
 - Deterministic graph construction through standardized canonicalization.
 - Privacy-preserving linkage using tokens instead of the underlying content of the data.
-- Support for both self-hosted and cloud-based deployments.
-- A persistent credibility graph that evolves with the addition of new assertions.
 - Producing deterministic credibility signals from graph topology.
-- Scaling to large, continuously evolving credibility networks.
+- Deployment through standard protocol interfaces such as MCP.
   
 ## 2. System Overview
 
@@ -33,9 +31,9 @@ At the highest level, Verity is composed of three key architectural components:
 - Verity Deployment
 - Inference Engine
 
-Applications can install and integrate the Verity SDK directly into their structured data pipelines. The SDK performs deterministic canonicalization, constructs a credibility graph, generates privacy-preserving linkage tokens, and submits graph updates to a Verity deployment.
+Applications can install and integrate the Verity SDK directly into their structured data pipelines. The SDK performs deterministic canonicalization, generates privacy-preserving linkage tokens, constructs a graph update, and submits it to a Verity deployment.
 
-A Verity deployment persists a credibility graph as new assertions are received. The deployment is responsible for executing structural credibility inference and returning credibility signals to an application. The credibility graph may be private to a single organization or shared across multiple participants (depending on the deployment model used).
+A Verity deployment receives graph updates from the Verity SDK, constructs the submitted credibility graph, executes structural credibility inference, and returns credibility signals to the application.
 
 <p align="center">
   <img src="images/architecture.png" alt="Verity system architecture" width="600">
@@ -53,7 +51,7 @@ The SDK serves as the primary integration point between applications and a Verit
 
 ### 3.2 Verity Deployment
 
-A Verity deployment receives graph updates from the Verity SDK and manages the overall execution of the inference engine. A deployment is the runtime environment for the Verity system.
+A deployment is the runtime environment responsible for receiving graph updates, constructing the inference graph, executing the inference engine, and returning credibility signals.
 
 ### 3.3 Inference Engine
 
@@ -87,38 +85,30 @@ The graph update is transmitted to a Verity deployment using a supported protoco
 
 ### 4.6 Credibility Inference
 
-After submission, the deployment resolves the linkage tokens and updates the persistent credibility graph, then executes the configured inference algorithm to compute structural credibility.
+After submission, the deployment resolves the linkage tokens, constructs the credibility graph represented by the submitted assertions, and executes the configured inference algorithm to compute structural credibility.
 
 ### 4.7 Credibility Response
 
 The deployment returns deterministic credibility signals to the application.
 
-## 5. Credibility Graph
+## 5. Inference Graph
 
-Each Verity deployment maintains a persistent data structure which is referred to as a credibility graph. The credibility graph models how sources and claims connect through assertions, enabling structural credibility to be computed over the graph topology.
+Each inference request defines a credibility graph composed of the submitted sources, claims, and assertions. The deployment constructs this graph before executing structural credibility inference.
 
 ### 5.1 Graph Structure
 
-The credibility graph is modeled as a bipartite graph where source and claim nodes connect through their assertions (edges). When an application submits a graph update, it contributes additional topology to the graph.
+The credibility graph is modeled as a bipartite graph where source and claim nodes connect through their assertions (edges). The submitted assertions determine the topology analyzed during inference.
 
-### 5.2 Graph Evolution
+### 5.2 Graph Construction
 
-As new graph updates are received, the credibility graph evolves. Verity does not reconstruct the graph on every request; it incrementally expands the existing graph with additional assertions.
-
-### 5.3 Persistence
-
-A Verity deployment maintains the credibility graph across requests. This persistent graph allows credibility to accumulate over time as more independent assertions are contributed by participating applications.
-
-### 5.4 Snapshots
-
-Credibility inference is performed over a consistent snapshot of the credibility graph. This allows graph updates and credibility computation to operate independently while ensuring deterministic inference for a given graph state.
+After resolving linkage tokens, the deployment constructs the credibility graph represented by the submitted assertions. This graph serves as the input to the inference engine for the duration of the inference request.
 
 ## 6. Deployment
 
-### 6.1 Deployment Models
+### 6.1 Reference Implementation
 
-Verity deployments may be self-hosted or cloud-hosted. Every deployment implements the same protocol and maintains a persistent credibility graph regardless of deployment model. The deployment model mainly affects where the credibility graph is stored and administered, but does not alter the behavior defined by the Verity Protocol.
+The reference implementation is designed to be deployed as a self-hosted MCP server. It accepts graph updates, executes structural credibility inference, and returns deterministic credibility signals according to the Verity Protocol.
 
 ### 6.2 Trust Boundary
 
-Applications  perform semantic extraction and canonicalization before interacting with Verity. Verity operates only on protocol-compliant graph updates and does not interpret the underlying content. This separation establishes the trust boundary between application-specific processing and structural credibility inference.
+Applications perform semantic extraction and canonicalization before interacting with Verity. Verity operates only on protocol-compliant graph updates and does not interpret the underlying content. This separation establishes the trust boundary between application-specific processing and structural credibility inference.
