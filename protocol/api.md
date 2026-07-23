@@ -1,6 +1,6 @@
 # API Reference
 
-The Verity API computes structural credibility over networks consisting of sources, claims, and assertions.
+The Verity API computes structural credibility over assertion graphs composed of opaque source, attribute, and claim linkage identifiers.
 
 The specific request and response schemas exposed by Verity deployments are defined in this document. API behavior, including versioning, identifiers, errors, and tool interfaces, are also defined.
 
@@ -8,10 +8,10 @@ The API is transport-independent. The reference implementation is exposed over t
 
 To see related specifications, visit:
 
-- **[`protocol.md`](protocol.md)** —The communication contract between clients and Verity deployments. Defines the JSON-RPC protocol and request/response formats.
-- **[`architecture.md`](architecture.md)**  — Describes the high-level system architecture and component interactions.
-- **[`canonicalization.md`](canonicalization.md)** - Deterministic normalization rules. Specifies how semantically equivalent assertions produce the same graph representation before inference.
-- **[`sdk.md`](sdk.md)** - Client integration guides for constructing graphs, linkage token generation, submitting requests from supported languages.
+- **[`protocol.md`](protocol.md)** — The communication contract between clients and Verity deployments. Defines the JSON-RPC protocol and request/response formats.
+- **[`architecture.md`](architecture.md)** — Describes the high-level system architecture and component interactions.
+- **[`canonicalization.md`](canonicalization.md)** — Deterministic normalization rules. Specifies how semantically equivalent assertions produce the same graph representation before inference.
+- **[`sdk.md`](sdk.md)** — Client integration guides for constructing graphs, linkage token generation, submitting requests from supported languages.
 - **[`mcp.md`](mcp.md)** — The MCP binding for the Verity Protocol.
 
 ---
@@ -27,7 +27,7 @@ The API distinguishes between protocol versions and algorithm versions.
 
 Protocol versions define the behavior and structure of the API.
 
-Algorithm versions define the inference implementation. They may be subject to change independently of the protocol version, provided the API remains backward compatible.
+Algorithm versions define the inference implementation. They may change independently of the protocol version, provided the API remains backward compatible.
 
 ```json
 {
@@ -144,18 +144,22 @@ Computes structural credibility over an assertion graph.
   "assertions": [
     {
       "source_id": "src_7d9a4e...",
+      "attribute_id": "attr_93e4f7...",
       "claim_id": "clm_f72d10..."
     },
     {
       "source_id": "src_b28491...",
+      "attribute_id": "attr_93e4f7...",
       "claim_id": "clm_f72d10..."
     },
     {
       "source_id": "src_91c8fd...",
+      "attribute_id": "attr_93e4f7...",
       "claim_id": "clm_51d8ab..."
     },
     {
       "source_id": "src_e46ab2...",
+      "attribute_id": "attr_93e4f7...",
       "claim_id": "clm_f72d10..."
     }
   ]
@@ -166,13 +170,14 @@ Computes structural credibility over an assertion graph.
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `assertions` | array | Collection of source-to-claim assertions. |
+| `assertions` | array | Collection of protocol assertions. |
 
 ### assertions
 
 | Property | Type | Description |
 | --- | --- | --- |
 | `source_id` | string | Opaque source identifier. |
+| `attribute_id` | string | Opaque identifier grouping competing claims describing the same attribute. |
 | `claim_id` | string | Opaque claim identifier. |
 
 ## Response
@@ -204,6 +209,7 @@ Computes structural credibility over an assertion graph.
   ],
   "claim_support": [
     {
+      "attribute_id": "attr_93e4f7...",
       "claim_id": "clm_f72d10...",
       "support": 0.83,
       "independent_support_count": 3,
@@ -217,6 +223,7 @@ Computes structural credibility over an assertion graph.
       ]
     },
     {
+      "attribute_id": "attr_93e4f7...",
       "claim_id": "clm_51d8ab...",
       "support": 0.17,
       "independent_support_count": 1,
@@ -262,8 +269,8 @@ Computes structural credibility over an assertion graph.
 | --- | --- | --- |
 | `summary` | object | Statistics describing the submitted graph. |
 | `source_credibility` | array | Credibility scores for each source. |
-| `claim_support` | array | Support scores for each claim. |
-| `source_dependencies` | array | Shared-claim relationships between sources. |
+| `claim_support` | array | Support information for each claim, including competing claims within the same attribute group. |
+| `source_dependencies` | array | Shared-claim relationships between pairs of sources. |
 | `metadata` | object | Information about the completed inference run. |
 
 ### summary
@@ -285,11 +292,12 @@ Computes structural credibility over an assertion graph.
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `claim_id` | string | Opaque claim identifier. |
+| `attribute_id` | string | Opaque identifier grouping competing claims describing the same attribute. |
+| `claim_id` | string | Opaque identifier representing the claim. |
 | `support` | number | Computed support score. |
 | `independent_support_count` | integer | Number of independent supporting sources. |
 | `dependent_support_count` | integer | Number of dependent supporting sources. |
-| `is_attribute_max_support` | boolean | Identifies if a claim has the highest support among competing claims for the same attribute. |
+| `is_attribute_max_support` | boolean | Indicates whether the claim has the highest support among competing claims for the same attribute. |
 | `conflicting_claims` | array | Competing claims and their corresponding support scores. |
 
 ### source_dependencies
@@ -333,6 +341,7 @@ Returns structural information associated with a claim.
 
 ```json
 {
+  "attribute_id": "attr_93e4f7...",
   "claim_id": "clm_f72d10...",
   "support": 0.83,
   "independent_support_count": 3,
@@ -365,11 +374,12 @@ Returns structural information associated with a claim.
 
 | Property | Type | Description |
 | --- | --- | --- |
+| `attribute_id` | string | Opaque identifier grouping competing claims describing the same attribute. |
 | `claim_id` | string | Opaque claim identifier. |
 | `support` | number | Computed support score. |
 | `independent_support_count` | integer | Number of independent supporting sources. |
 | `dependent_support_count` | integer | Number of dependent supporting sources. |
-| `is_attribute_max_support` | boolean | Identifies if the claim has the highest support among competing claims for the same attribute. |
+| `is_attribute_max_support` | boolean | Indicates whether the claim has the highest support among competing claims for the same attribute. |
 | `supporting_sources` | array | Sources asserting the claim and their credibility scores. |
 | `conflicting_claims` | array | Competing claims and their corresponding support scores. |
 
@@ -402,23 +412,28 @@ Example of an `infer_credibility` request transported over the Model Context Pro
     "name": "infer_credibility",
     "arguments": {
       "assertions": [
-      {
-        "source_id": "src_7d9a4e...",
-        "claim_id": "clm_f72d10..."
-      },
-      {
-        "source_id": "src_b28491...",
-        "claim_id": "clm_f72d10..."
-      },
-      {
-        "source_id": "src_91c8fd...",
-        "claim_id": "clm_51d8ab..."
-      },
-      {
-        "source_id": "src_e46ab2...",
-        "claim_id": "clm_f72d10..."
-      }
-    ]
+        {
+          "source_id": "src_7d9a4e...",
+          "attribute_id": "attr_93e4f7...",
+          "claim_id": "clm_f72d10..."
+        },
+        {
+          "source_id": "src_b28491...",
+          "attribute_id": "attr_93e4f7...",
+          "claim_id": "clm_f72d10..."
+        },
+        {
+          "source_id": "src_91c8fd...",
+          "attribute_id": "attr_93e4f7...",
+          "claim_id": "clm_51d8ab..."
+        },
+        {
+          "source_id": "src_e46ab2...",
+          "attribute_id": "attr_93e4f7...",
+          "claim_id": "clm_f72d10..."
+        }
+      ]
+    }
   }
 }
 ```

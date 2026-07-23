@@ -2,96 +2,231 @@
 
 ## 1. Introduction
 
-The Verity protocol describes the contract between clients and Verity deployments.
+The Verity Protocol defines the interoperability contract between clients and Verity deployments.
 
-Verity computes structural credibility based on graphs built from sources, claims, and assertions, but does not interpret the underlying content. Clients extract structured assertions from their local data. Then, the graph is constructed and submitted to a Verity deployment for inference.
+The protocol defines the method for how structured assertions are represented and transformed into privacy-preserving identifiers. Identifiers are transmitted and processed to produce deterministic credibility signals.
 
-This document describes the responsibilities and guarantees required by the interoperable implementations of the Verity Protocol.
+The protocol does not define the method for extracting structured assertions from unstructured data, nor does it prescribe a specific credibility inference algorithm. Those implementation details are outside the scope of this specification.
 
-## 2. Terminology
+---
 
-This document uses the following terms:
+## 2. Requirement Language
 
-- Source: The origin making one or more claims.
-- Claim: A structured piece of information about an entity.
-- Assertion: The relationship between a source and a claim.
-- Credibility Graph: A bipartite graph composed of sources, claims, and assertions.
-- Client: Software that constructs and submits graph updates.
-- Verity Deployment: A self-hosted or cloud-hosted implementation of the Verity Protocol.
+The key words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** in this document are to be interpreted as described in RFC 2119.
 
-## 3. Design Goals
+---
 
-The Verity Protocol is built according to the following principles:
+## 3. Core Concepts
 
-### Domain Agnostic
+A **Source** represents an independent origin that asserts one or more claims.
 
-Verity operates on graph topology without any domain-specific semantics.
+Examples could include websites, databases, organizations, documents, APIs, or other identifiable publishers.
 
-### Deterministic
+---
 
-Equivalent inputs result in equivalent graph structure.
+### Assertion
 
-### Privacy Preserving
+An **Assertion** is the relationship between a source and a claim.
 
-Clients canonicalize assertions and convert them into privacy-preserving linkage tokens. Verity deployments do not require the underlying content in order to perform inference.
+Assertions are the fundamental edges of the Verity credibility graph.
 
-### Persistent
+---
 
-Each Verity deployment stores and maintains a persistent credibility graph that changes with new assertions.
+### Claim
 
-## 4. Protocol Roles
+A **Claim** represents a canonical statement describing a piece of structured information.
+
+Multiple independent sources may assert the same claim.
+
+---
 
 ### Client
 
-The client MUST:
+A **Client** is software responsible for constructing protocol-compliant requests.
+
+---
+
+## 4. Design Principles
+
+### Domain Agnostic
+
+The protocol does not depend on any particular application domain.
+
+Clients MAY submit assertions describing any type of structured information.
+
+---
+
+### Deterministic
+
+Equivalent canonical assertions MUST produce equivalent linkage identifiers.
+
+Given an identical graph state, a deployment MUST produce deterministic inference results.
+
+---
+
+### Content Blind
+
+Verity deployments operate exclusively on opaque identifiers.
+
+Deployments MUST NOT require semantic interpretation of the underlying content.
+
+---
+
+### Privacy Preserving
+
+Clients are responsible for transforming canonical assertions into privacy-preserving linkage identifiers prior to transmission.
+
+Deployments operate exclusively on those identifiers.
+
+---
+
+### Deployment Independent
+
+The protocol supports both persistent and ephemeral deployments.
+
+Persistence behavior is determined by the deployment implementation rather than the protocol itself.
+
+---
+
+## 5. Protocol Roles
+
+### Client Responsibilities
+
+A conforming client MUST:
 
 - Extract structured assertions from local data.
-- Construct graph updates from the extracted assertions.
-- Canonicalize graph updates according to the Verity Canonicalization Specification.
-- Generate privacy-preserving linkage tokens from the canonicalized graph.
-- Submit graph updates to a Verity deployment.
+- Canonicalize assertions according to the Verity Canonicalization Specification.
+- Generate claim linkage identifiers.
+- Generate attribute linkage identifiers.
+- Construct protocol-compliant assertion messages.
+- Submit requests to a Verity deployment.
 
-The Verity protocol does not support semantic extraction from unstructured data.
+A client MUST NOT require a deployment to perform semantic extraction, canonicalization, or fuzzy matching.
 
-### Verity Deployment
+---
 
-A Verity Deployment MUST:
+### Deployment Responsibilities
 
-- Store and maintain the credibility graph.
-- Resolve linkage tokens.
-- Update graph topology.
-- Compute structural credibility.
-- Return deterministic credibility signals.
+A conforming deployment MUST:
 
-A Verity deployment MUST NOT interpret the underlying content.
+- Validate incoming protocol messages.
+- Treat all linkage identifiers as opaque values.
+- Resolve linkage identifiers within the local graph state.
+- Perform credibility inference.
+- Return protocol-compliant responses.
 
-A Verity deployment assumes every structured graph update is compliant with the protocol, so no semantic extraction is performed.
+A deployment MUST NOT require raw assertion content in order to execute inference.
 
-## 5. Protocol Overview
+---
 
-The protocol is composed of the following stages:
+## 6. Processing Model
 
-1.  Structured Extraction: Client obtains structured assertions from local sources.
-2.  Canonicalization: Client deterministically canonicalizes extracted assertions.
-3.  Linkage Generation: Client generates privacy-preserving linkage tokens from canonicalized assertions.
-4.  Graph Construction: Client constructs graph update messages using linkage tokens.
-5.  Graph Submission: Client transmits graph updates to a Verity Deployment.
-6.  Credibility Inference: Verity Deployment computes credibility over the graph.
-7.  Credibility Response: Verity Deployment returns credibility signals to the client.
+The protocol follows the following conceptual workflow.
 
-The specific inference algorithm implementations are not specified here.
+```
+Client
 
-## 6. Protocol Guarantees
+    Structured Extraction
+            │
+            ▼
+     Canonicalization
+            │
+            ▼
+   Linkage Generation
+            │
+            ▼
+  Protocol Message Construction
+            │
+            ▼
+     Request Submission
 
-A conforming Verity Protocol guarantees the following:
+────────────────────────────────────────
 
-- Equivalent canonicalized inputs produce equivalent graph structures.
-- Credibility is derived solely from graph structure, not from the semantic interpretation of content.
-- Inference results are deterministic for a given state of the credibility graph.
-- Protocol compatibility is maintained even with future improvements to the inference algorithm used by a Verity Deployment.
+Verity Deployment
 
-## 7. Conformance
+      Message Validation
+            │
+            ▼
+     Identifier Resolution
+            │
+            ▼
+      Graph Integration
+            │
+            ▼
+    Credibility Inference
+            │
+            ▼
+      Response Generation
+```
 
-An implementation conforms to the Verity Protocol if and only if it adheres to all of the requirements defined in this document.
+This workflow describes the logical stages of the protocol.
 
-The Verity inference engine may be updated over time to improve the inference algorithms, provided these updates maintain the guarantees listed in section 6.
+Implementations MAY optimize or reorder internal processing provided externally observable protocol behavior remains unchanged.
+
+---
+
+## 7. Protocol Requirements
+
+A conforming implementation MUST satisfy the following requirements.
+
+### Canonicalization
+
+Clients MUST canonicalize assertions before generating linkage identifiers.
+
+Equivalent canonical assertions MUST generate equivalent identifiers.
+
+---
+
+### Linkage Identifiers
+
+Clients MUST generate linkage identifiers according to the Verity Canonicalization Specification.
+
+Deployments MUST treat linkage identifiers as opaque identifiers.
+
+Deployments MUST NOT infer or depend upon their underlying contents.
+
+---
+
+### Assertions
+
+Every protocol assertion MUST contain:
+
+- a source identifier
+- an attribute linkage identifier
+- a claim linkage identifier
+
+The exact message format is defined by `api.md`.
+
+---
+
+### Inference
+
+Deployments MUST produce deterministic credibility results for an identical graph state.
+
+The protocol does not prescribe any particular inference algorithm.
+
+---
+
+### Responses
+
+Deployments MUST return responses conforming to the protocol response schema defined in `api.md`.
+
+---
+
+## 8. Compatibility
+
+Future protocol versions MAY introduce additional optional fields without breaking existing implementations.
+
+Inference algorithms MAY evolve independently of the protocol provided they continue to satisfy the guarantees defined by this specification.
+
+Changes that modify protocol message formats or required behavior constitute a new protocol version.
+
+---
+
+## 9. Security Considerations
+
+The Verity Protocol is designed to minimize disclosure of underlying assertion content by operating on privacy-preserving linkage identifiers.
+
+Implementations remain responsible for transport security, authentication, authorization, access control, and cryptographic key management.
+
+These concerns are outside the scope of this specification.

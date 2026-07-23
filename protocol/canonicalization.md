@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-The Verity Canonicalization Specification defines a set of deterministic rules for sources, claims, and assertions before applications construct a graph. It specifies how data is normalized and serialized into a canonical representation. This enables applications to exchange canonicalized data without any ambiguity.
+The Verity Canonicalization Specification defines a set of deterministic rules for sources, claims, and assertions before applications construct a graph. It specifies how data is normalized into a canonical representation before deterministic linkage tokens are generated. This enables applications to exchange opaque identifiers while preserving a consistent graph structure across independent implementations.
 
 ## 2. Design Goals
 
@@ -295,6 +295,22 @@ The SDK MUST:
 - Reject assertions that include non-canonical sources or claims.
 - Reject duplicate assertions within the submitted graph.
 
+### 5.4 Linkage Token Generation
+
+The SDK MUST construct protocol assertions using these linkage tokens.
+
+The SDK MUST:
+
+- Generate a `source_id` from the canonical source representation.
+- Generate an `attribute_id` from the canonical `(entity, attribute)` representation.
+- Generate a `claim_id` from the canonical `(entity, attribute, value)` representation.
+- Produce identical linkage tokens for semantically equivalent canonical representations.
+- Produce different linkage tokens whenever the canonical representations differ.
+
+The underlying canonical source, entity, attribute, and value MUST NOT be transmitted to the Verity deployment.
+
+After canonicalization, the SDK MUST generate deterministic linkage tokens for the canonical source and canonical claim representations.
+
 Examples:
 
 ```text
@@ -400,6 +416,72 @@ Example
     "attribute": "supports_streaming",
     "value": true
   }
+}
+```
+
+### 6.4 Linkage Tokens
+
+The canonical representations defined in this section are intermediate forms used to derive deterministic linkage tokens.
+
+These linkage tokens are the identifiers exchanged between clients and Verity deployments.
+
+The Verity Protocol uses three linkage identifiers:
+
+- `source_id`
+- `attribute_id`
+- `claim_id`
+
+The `attribute_id` MUST be derived from the canonical `(entity, attribute)` representation.
+
+The `claim_id` MUST be derived from the canonical `(entity, attribute, value)` representation.
+
+Implementations MAY use any deterministic linkage algorithm, provided identical canonical representations always produce identical linkage tokens.
+
+Example
+
+Canonical source
+
+```json
+{
+  "kind": "web_publisher",
+  "identifier": "docs.anthropic.com"
+}
+```
+
+Canonical attribute
+
+```json
+{
+  "entity": "messages_api",
+  "attribute": "supports_streaming"
+}
+```
+
+Canonical claim
+
+```json
+{
+  "entity": "messages_api",
+  "attribute": "supports_streaming",
+  "value": true
+}
+```
+
+Generated linkage tokens
+
+```text
+source_id      -> src_7d9a4e...
+attribute_id   -> attr_93e4f7...
+claim_id       -> clm_f72d10...
+```
+
+Protocol assertion
+
+```json
+{
+  "source_id": "src_7d9a4e...",
+  "attribute_id": "attr_93e4f7...",
+  "claim_id": "clm_f72d10..."
 }
 ```
 
